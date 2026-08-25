@@ -1,23 +1,22 @@
-name: PEC Environment Validation
+name: PEC SMTP Authentication
 on:
   push:
     paths:
       - '.github/workflows/pec-smtp-probe.yml'
   workflow_dispatch:
 jobs:
-  validate:
+  authenticate:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Check PEC runtime secrets
+      - name: Authenticate Namirial PEC without sending
         run: |
           set -euo pipefail
-          curl --fail-with-body --silent --show-error --max-time 30 https://arbjparbiehclquavfnc.supabase.co/functions/v1/pec-env-check | tee result.json
+          curl --fail-with-body --silent --show-error --max-time 30 https://arbjparbiehclquavfnc.supabase.co/functions/v1/pec-smtp-auth-check | tee result.json
           python3 - <<'PY'
           import json
           d=json.load(open('result.json'))
-          assert d['ok'] is True
-          missing=[k for k,v in d['configured'].items() if not v]
-          if missing: raise SystemExit('Missing env vars: '+', '.join(missing))
-          print('ALL_PEC_ENV_VARS_CONFIGURED')
+          assert d.get('ok') is True, d
+          assert d.get('stage') == 'authenticated', d
+          print('NAMIRIAL_SMTP_AUTHENTICATED')
           PY
