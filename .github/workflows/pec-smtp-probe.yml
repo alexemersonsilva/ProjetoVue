@@ -1,22 +1,24 @@
-name: PEC SMTP Authentication
+name: PEC Send Art335
 on:
   push:
     paths:
       - '.github/workflows/pec-smtp-probe.yml'
   workflow_dispatch:
 jobs:
-  authenticate:
+  send:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Authenticate Namirial PEC without sending
+      - name: Send PEC art 335 to Procura di Paola
         run: |
           set -euo pipefail
-          curl --fail-with-body --silent --show-error --max-time 30 https://arbjparbiehclquavfnc.supabase.co/functions/v1/pec-smtp-auth-check | tee result.json
+          curl --fail-with-body --silent --show-error --max-time 60 -X POST \
+            -H 'x-pec-send-token: aeitp-335-8f1f4f5d-4c14-44dc-a393-2ec6c7fd0b2a' \
+            https://arbjparbiehclquavfnc.supabase.co/functions/v1/pec-send-art335 | tee result.json
           python3 - <<'PY'
           import json
           d=json.load(open('result.json'))
           assert d.get('ok') is True, d
-          assert d.get('stage') == 'authenticated', d
-          print('NAMIRIAL_SMTP_AUTHENTICATED')
+          assert d.get('sent') is True or d.get('already') is True, d
+          print('PEC_SEND_CONFIRMED', d)
           PY
