@@ -1,4 +1,4 @@
-name: PEC SMTP Probe
+name: PEC Setup HTTP Validation
 on:
   push:
     paths:
@@ -6,12 +6,20 @@ on:
   workflow_dispatch:
 
 jobs:
-  probe:
+  validate:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Call Supabase PEC SMTP probe
+      - name: Validate PEC setup response headers
         run: |
           set -euo pipefail
-          curl --fail-with-body --silent --show-error --max-time 30 \
-            https://arbjparbiehclquavfnc.supabase.co/functions/v1/pec-smtp-probe
+          url='https://arbjparbiehclquavfnc.supabase.co/functions/v1/pec-setup'
+          headers=$(mktemp)
+          body=$(mktemp)
+          code=$(curl -sS -D "$headers" -o "$body" -w '%{http_code}' --max-time 30 "$url")
+          echo "HTTP=$code"
+          cat "$headers"
+          echo '--- BODY ---'
+          head -c 300 "$body"; echo
+          grep -qi '^content-type: text/html' "$headers"
+          test "$code" = '400'
