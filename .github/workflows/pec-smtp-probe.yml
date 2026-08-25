@@ -1,0 +1,17 @@
+name: PEC SMTP Probe
+on:
+  push:
+    paths:
+      - '.github/workflows/pec-smtp-probe.yml'
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Call Supabase PEC SMTP probe
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --max-time 30 \
+            https://arbjparbiehclquavfnc.supabase.co/functions/v1/pec-smtp-probe
