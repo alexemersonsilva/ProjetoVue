@@ -1,25 +1,23 @@
-name: PEC Setup HTTP Validation
+name: PEC Environment Validation
 on:
   push:
     paths:
       - '.github/workflows/pec-smtp-probe.yml'
   workflow_dispatch:
-
 jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Validate PEC setup response headers
+      - name: Check PEC runtime secrets
         run: |
           set -euo pipefail
-          url='https://arbjparbiehclquavfnc.supabase.co/functions/v1/pec-setup'
-          headers=$(mktemp)
-          body=$(mktemp)
-          code=$(curl -sS -D "$headers" -o "$body" -w '%{http_code}' --max-time 30 "$url")
-          echo "HTTP=$code"
-          cat "$headers"
-          echo '--- BODY ---'
-          head -c 300 "$body"; echo
-          grep -qi '^content-type: text/html' "$headers"
-          test "$code" = '400'
+          curl --fail-with-body --silent --show-error --max-time 30 https://arbjparbiehclquavfnc.supabase.co/functions/v1/pec-env-check | tee result.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('result.json'))
+          assert d['ok'] is True
+          missing=[k for k,v in d['configured'].items() if not v]
+          if missing: raise SystemExit('Missing env vars: '+', '.join(missing))
+          print('ALL_PEC_ENV_VARS_CONFIGURED')
+          PY
